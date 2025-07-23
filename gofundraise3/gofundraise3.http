@@ -1,0 +1,6 @@
+@gofundraise3_HostAddress = http://localhost:5265
+
+GET {{gofundraise3_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
