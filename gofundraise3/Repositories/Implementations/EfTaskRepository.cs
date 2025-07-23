@@ -5,16 +5,13 @@ using gofundraise3.Repositories.Interfaces;
 
 namespace gofundraise3.Repositories.Implementations
 {
-    public class EfTaskRepository : ITaskRepository
+    public class EfTaskRepository : EfRepository<TaskItem>, ITaskRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public EfTaskRepository(ApplicationDbContext context)
+        public EfTaskRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public async Task<IEnumerable<TaskItem>> GetAllAsync()
+        public override async Task<IEnumerable<TaskItem>> GetAllAsync()
         {
             return await _context.Tasks
                 .Include(t => t.Project)
@@ -22,23 +19,14 @@ namespace gofundraise3.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task<TaskItem?> GetByIdAsync(int id)
+        public override async Task<TaskItem?> GetByIdAsync(int id)
         {
             return await _context.Tasks
                 .Include(t => t.Project)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
-        public async Task<IEnumerable<TaskItem>> GetByProjectIdAsync(int projectId)
-        {
-            return await _context.Tasks
-                .Include(t => t.Project)
-                .Where(t => t.ProjectId == projectId)
-                .OrderBy(t => t.CreatedDate)
-                .ToListAsync();
-        }
-
-        public async Task<TaskItem> CreateAsync(TaskItem task)
+        public override async Task<TaskItem> CreateAsync(TaskItem task)
         {
             task.CreatedDate = DateTime.UtcNow;
             task.UpdatedDate = DateTime.UtcNow;
@@ -50,7 +38,7 @@ namespace gofundraise3.Repositories.Implementations
             return await GetByIdAsync(task.Id) ?? task;
         }
 
-        public async Task<TaskItem> UpdateAsync(TaskItem task)
+        public override async Task<TaskItem> UpdateAsync(TaskItem task)
         {
             task.UpdatedDate = DateTime.UtcNow;
             
@@ -61,14 +49,13 @@ namespace gofundraise3.Repositories.Implementations
             return await GetByIdAsync(task.Id) ?? task;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<IEnumerable<TaskItem>> GetByProjectIdAsync(int projectId)
         {
-            var task = await _context.Tasks.FindAsync(id);
-            if (task == null) return false;
-
-            _context.Tasks.Remove(task);
-            await _context.SaveChangesAsync();
-            return true;
+            return await _context.Tasks
+                .Include(t => t.Project)
+                .Where(t => t.ProjectId == projectId)
+                .OrderBy(t => t.CreatedDate)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<TaskItem>> GetByStatusAsync(Entities.TaskStatus status)
